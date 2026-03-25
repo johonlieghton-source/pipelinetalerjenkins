@@ -4,19 +4,34 @@ pipeline {
     stages {
         stage('Build') {
             steps {
-                echo 'Compilando aplicación...'
+                sh 'echo "Build..."'
             }
         }
 
         stage('Test') {
-            steps {
-                echo 'Ejecutando pruebas...'
+            parallel {
+                stage('Test Backend') {
+                    steps {
+                        sh 'echo "Test backend..."'
+                    }
+                }
+                stage('Test Frontend') {
+                    steps {
+                        sh 'echo "Test frontend..."'
+                    }
+                }
             }
         }
 
         stage('Deploy') {
             steps {
-                echo 'Desplegando aplicación...'
+                sh 'echo "Deploy..."'
+            }
+        }
+
+        stage('Smoke Test') {
+            steps {
+                sh 'curl -f http://localhost:8080 || exit 1'
             }
         }
     }
