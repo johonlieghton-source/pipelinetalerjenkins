@@ -13,14 +13,14 @@ pipeline {
     stages {
         stage('Descargar código') {
             steps {
-                git branch: 'main', url: 'https://github.com/TU_USUARIO/TU_REPOSITORIO.git'
+                git branch: 'main', url: 'https://github.com/johonlieghton-source/pipelinetalerjenkins.git’
             }
         }
         
         stage('Construir Imagen Docker') {
             steps {
                 script {
-                    docker.build("${IMAGE_NAME}:latest")
+                    docker.build("${mi_docker_de_prueba}:latest")
                 }
             }
         }
@@ -28,16 +28,16 @@ pipeline {
         stage('Empaquetar Imagen') {
             steps {
                 echo 'Convirtiendo imagen a archivo .tar para enviarla...'
-                sh "docker save ${IMAGE_NAME}:latest -o ${IMAGE_NAME}.tar"
+                sh "docker save ${mi_docker_de_prueba}:latest -o ${mi_docker_de_prueba}.tar"
             }
         }
         
         stage('Enviar a VM de VMware') {
             steps {
                 echo 'Enviando archivo por SSH a la VM...'
-                sshagent(credentials: ["${SSH_CREDS}"]) {
+                sshagent(credentials: ["${jenkins@192.168.1.122}"]) {
                     // Usamos scp para enviar el archivo .tar al directorio /tmp de la VM
-                    sh "scp -o StrictHostKeyChecking=no ${IMAGE_NAME}.tar ${VM_USER}@${VM_IP}:/tmp/${IMAGE_NAME}.tar"
+                    sh "scp -o StrictHostKeyChecking=no ${mi_docker_de_prueba}.tar ${jenkins}@${192.168.1.122}:/tmp/${mi_docker_de_prueba}.tar"
                 }
             }
         }
@@ -45,22 +45,22 @@ pipeline {
         stage('Desplegar en VM de VMware') {
             steps {
                 echo 'Levantando el contenedor en la VM remota...'
-                sshagent(credentials: ["${SSH_CREDS}"]) {
+                sshagent(credentials: ["${jenkins@192,168,1,122}"]) {
                     // Usamos ssh para ejecutar comandos directamente en la VM
                     sh """
-                    ssh -o StrictHostKeyChecking=no ${VM_USER}@${VM_IP} << 'EOF'
+                    ssh -o StrictHostKeyChecking=no ${jenkins}@${192.168.1.122} << 'EOF'
                         echo "Deteniendo contenedor anterior..."
-                        docker stop ${CONTAINER_NAME} || true
-                        docker rm ${CONTAINER_NAME} || true
+                        docker stop ${mi_contenedor_de_prueba} || true
+                        docker rm ${mi_contenedor_de_prueba} || true
                         
                         echo "Cargando nueva imagen..."
-                        docker load -i /tmp/${IMAGE_NAME}.tar
+                        docker load -i /tmp/${mi_docker_de_prueba}.tar
                         
                         echo "Levantando nuevo contenedor..."
-                        docker run -d -p 80:80 --name ${CONTAINER_NAME} ${IMAGE_NAME}:latest
+                        docker run -d -p 80:80 --name ${mi_contenedor_de_prueba} ${mi_docker_de_prueba}:latest
                         
                         echo "Limpiando archivo temporal..."
-                        rm /tmp/${IMAGE_NAME}.tar
+                        rm /tmp/${mi_docker_de_prueba}.tar
                     EOF
                     """
                 }
@@ -71,10 +71,10 @@ pipeline {
     post {
         always {
             echo 'Limpiando archivos temporales en Jenkins...'
-            sh "rm -f ${IMAGE_NAME}.tar"
+            sh "rm -f ${mi_docker_de_prueba}.tar"
         }
         success {
-            echo "¡Despliegue exitoso en la VM ${VM_IP}!"
+            echo "¡Despliegue exitoso en la VM ${192,168,1,122}!"
         }
         failure {
             echo 'El despliegue falló. Revisa los logs.'
