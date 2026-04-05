@@ -70,7 +70,7 @@ pipeline {
             sh "rm -f ${IMAGE_NAME}.tar"
         }
         success {
-            echo "¡¡Despliegue exitoso en la VM ${VM_IP}!!"
+            echo "¡Despliegue exitoso en la VM ${VM_IP}!"
         }
         failure {
             echo 'El despliegue falló. Revisa los logs.'
