@@ -1,28 +1,22 @@
 pipeline {
     agent any
-
     environment {
-        IMAGE_NAME = 'mi-app-web'
+        IMAGE_NAME     = 'mi-app-web'
         CONTAINER_NAME = 'mi-contenedor-web'
-        // ---> CAMBIA ESTAS VARIABLES POR LOS DATOS DE TU VM <---
-        VM_IP = '192.168.1.122' 
-        VM_USER = 'jenkins'
-        SSH_CREDS = 'ssh-vm-vmware' // El ID que pusiste en el paso 3
+        VM_IP          = '192.168.1.122' 
+        VM_USER        = 'jenkins'
+        SSH_KEY_PATH   = '/var/lib/jenkins/.ssh/id_rsa'
     }
-
     stages {
         stage('Descargar código') {
             steps {
                 git branch: 'main', url: 'https://github.com/johonlieghton-source/pipelinetalerjenkins.git'
-                
             }
         }
         
         stage('Construir Imagen Docker') {
             steps {
-                script {
-                    docker.build("${IMAGE_NAME}:latest")
-                }
+                sh "docker build -t ${IMAGE_NAME}:latest ."
             }
         }
 
@@ -36,28 +30,29 @@ pipeline {
         stage('Enviar a VM de VMware') {
             steps {
                 echo 'Enviando archivo por SSH a la VM...'
-                sh "scp -i /var/lib/jenkins/.ssh/id_rsa -o StrictHostKeyChecking=no ${IMAGE_NAME}.tar ${VM_USER}@${VM_IP}:/tmp/${IMAGE_NAME}.tar"
+                sh "scp -i ${SSH_KEY_PATH} -o StrictHostKeyChecking=no ${IMAGE_NAME}.tar ${VM_USER}@${VM_IP}:/tmp/${IMAGE_NAME}.tar"
             }
         }
-}
 
         stage('Desplegar en VM de VMware') {
             steps {
-               echo 'Levantando el contenedor en la VM remota...'
-        sh """
-            ssh -i /var/lib/jenkins/.ssh/id_rsa -o StrictHostKeyChecking=no ${VM_USER}@${VM_IP} '
-                docker stop ${CONTAINER_NAME} || true
-                docker rm ${CONTAINER_NAME} || true
-                docker load -i /tmp/${IMAGE_NAME}.tar
-                docker run -d -p 80:80 --name ${CONTAINER_NAME} ${IMAGE_NAME}:latest
-                rm /tmp/${IMAGE_NAME}.tar
-                '
-            """
-                }
+                echo 'Levantando el contenedor en la VM remota...'
+                sh """
+                    ssh -i ${SSH_KEY_PATH} -o StrictHostKeyChecking=no ${VM_USER}@${VM_IP} '
+                        echo "Deteniendo contenedor anterior..."
+                        docker stop ${CONTAINER_NAME} || true
+                        docker rm ${CONTAINER_NAME} || true
+                        echo "Cargando nueva imagen..."
+                        docker load -i /tmp/${IMAGE_NAME}.tar
+                        echo "Levantando nuevo contenedor..."
+                        docker run -d -p 80:80 --name ${CONTAINER_NAME} ${IMAGE_NAME}:latest
+                        echo "Limpiando archivo temporal..."
+                        rm /tmp/${IMAGE_NAME}.tar
+                    '
+                """
             }
         }
     }
-
     post {
         always {
             echo 'Limpiando archivos temporales en Jenkins...'
