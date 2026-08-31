@@ -3,7 +3,7 @@ pipeline {
     environment {
         IMAGE_NAME     = 'mi-app-web'
         CONTAINER_NAME = 'mi-contenedor-web'
-        VM_IP          = '192.168.1.122' 
+        VM_IP          = '192.168.1.130' 
         VM_USER        = 'jenkins'
         SSH_KEY_PATH   = '/var/lib/jenkins/.ssh/id_rsa'
     }
