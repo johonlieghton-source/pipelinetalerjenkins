@@ -5,7 +5,7 @@ pipeline {
         IMAGE_NAME = 'mi-app-web'
         CONTAINER_NAME = 'mi-contenedor-web'
         // ---> CAMBIA ESTAS VARIABLES POR LOS DATOS DE TU VM <---
-        VM_IP = '192.168.1.130' 
+        VM_IP = '192.168.1.122' 
         VM_USER = 'jenkins'
         SSH_CREDS = 'ssh-vm-vmware' // El ID que pusiste en el paso 3
     }
