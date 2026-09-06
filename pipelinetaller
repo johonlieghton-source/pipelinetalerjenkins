@@ -70,7 +70,7 @@ pipeline {
                 echo "SMOKE TEST"
                 echo "Verificando servicio..."
 
-                curl -f http://192.168.1.122:8080 || echo "Simulación OK (servicio no disponible en demo)"
+                curl -f http://192.168.1.130:8080 || echo "Simulación OK (servicio no disponible en demo)"
 
                 echo "Pipeline continúa correctamente"
                 '''
